@@ -219,6 +219,8 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
 .hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; }
 .field label { font-size: 13px; font-weight: 600; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row .field { min-width: 0; }
 .err { color: var(--bad); font-size: 13px; margin-top: 8px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; z-index: 40; }
 .foot { font-size: 12px; color: var(--muted); line-height: 1.6; }
@@ -311,7 +313,7 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
       <div class="chart" id="wk-chart"></div>
     </div>
     <div class="panel span-5" id="rhythm">
-      <div class="panel-head"><h2>Consistency</h2><span class="note" id="rh-note">Since 1 Oct</span></div>
+      <div class="panel-head"><h2>Consistency</h2><span class="note" id="rh-note">Since the start</span></div>
       <div class="rhythm">
         <div>
           <div class="label" style="margin-bottom:8px">This week</div>
@@ -330,7 +332,7 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
     </div>
   </section>
 
-  <p class="foot">Pace = distance done ÷ (target × days elapsed ÷ 365). Needed per day = what's left ÷ days left, today included. Projection = done so far + your last-28-day daily average × the days after today. Swimming is in metres; everything else in kilometres.</p>
+  <p class="foot">Pace = distance done ÷ (target × days elapsed ÷ days in your period). Needed per day = what's left ÷ days left, today included. Projection = done so far + your last-28-day daily average × the days after today. Swimming is in metres; everything else in kilometres.</p>
 </main>
 
 <button class="fab" id="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Log workout</button>
@@ -356,7 +358,8 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
 <div class="scrim" id="set-scrim" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="set-h">
     <div class="sheet-head"><h2 id="set-h">Goals</h2><button class="icon-btn" data-close="set" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <p class="muted" style="margin:0 0 14px;font-size:13px">Yearly targets for 1 Oct 2026 – 30 Sep 2027.</p>
+    <div class="field-row"><div class="field"><label for="t-start">Start date</label><input type="date" id="t-start"></div><div class="field"><label for="t-end">End date</label><input type="date" id="t-end"></div></div>
+    <p class="muted" style="margin:0 0 14px;font-size:13px" id="period-note">Targets below are for the whole period.</p>
     <div id="target-fields"></div>
     <div class="field"><label for="t-week">Active days per week</label><input type="number" id="t-week" min="1" max="7" step="1" inputmode="numeric"></div>
     <div class="err" id="set-err" hidden></div>
@@ -390,7 +393,8 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
 (() => {
   "use strict";
   // ---------- constants ----------
-  const START = "2026-10-01", END = "2027-09-30";
+  const DEF_START = "2026-10-01", DEF_END = "2027-09-30";
+  let START = DEF_START, END = DEF_END;
   const ACTS = [
     { k: "swim",  name: "Swimming", short: "Swim",  unit: "m",  dec: 0, quick: [250, 500, 1000], def: 50000,
       icon: '<path d="M2 16c2 0 2-1.5 4-1.5S8 16 10 16s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="16" cy="6" r="2"/><path d="M5 12l4-4 3 2 3-2"/>' },
@@ -410,9 +414,22 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
   const parse = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
   const addDays = (k, n) => { const d = parse(k); d.setDate(d.getDate() + n); return keyOf(d); };
   const diffDays = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
-  const N = diffDays(START, END) + 1;
-  const DAYS = Array.from({ length: N }, (_, i) => addDays(START, i));
-  const MONTHS = []; for (let i = 0; i < 12; i++) { const d = parse(START); d.setMonth(d.getMonth() + i); MONTHS.push(keyOf(d).slice(0, 7)); }
+  let N, DAYS, MONTHS;
+  const isDate = (k) => typeof k === "string" && /^\d{4}-\d{2}-\d{2}$/.test(k) && keyOf(parse(k)) === k;
+  function setPeriod(st, en) {
+    START = st; END = en;
+    N = diffDays(START, END) + 1;
+    DAYS = Array.from({ length: N }, (_, i) => addDays(START, i));
+    MONTHS = []; for (let mk = START.slice(0, 7); mk <= END.slice(0, 7); ) { MONTHS.push(mk); const d = parse(mk + "-01"); d.setMonth(d.getMonth() + 1); mk = keyOf(d).slice(0, 7); }
+  }
+  setPeriod(DEF_START, DEF_END);
+  function syncPeriod() {
+    const st = S.settings && isDate(S.settings.start) ? S.settings.start : DEF_START;
+    const en = S.settings && isDate(S.settings.end) && S.settings.end > st ? S.settings.end : (st === DEF_START ? DEF_END : addDays(addYear(st), -1));
+    if (st !== START || en !== END) { setPeriod(st, en); if (!MONTHS.includes(S.calMonth)) S.calMonth = null; }
+  }
+  const addYear = (k) => { const d = parse(k); d.setFullYear(d.getFullYear() + 1); return keyOf(d); };
+  const longDate = (k) => fmtDay(k, { day: "numeric", month: "short", year: "numeric" });
   const fmtDay = (k, o = { weekday: "short", day: "numeric", month: "short" }) => parse(k).toLocaleDateString("en-GB", o);
   const monthName = (mk, o = { month: "long", year: "numeric" }) => parse(mk + "-01").toLocaleDateString("en-GB", o);
   const todayKey = () => keyOf(new Date());
@@ -542,11 +559,12 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
   // ---------- render ----------
   let C = null;
   function render() {
+    syncPeriod();
     C = compute();
     const A = Object.fromEntries(ACTS.map((a) => [a.k, a]));
     el("demo-banner").hidden = !isDemo();
     el("targets-banner").hidden = S.mode === "loading" || !!(S.settings && S.settings.targets);
-    el("subline").textContent = `1 Oct 2026 – 30 Sep 2027 · ${C.left} days left`;
+    el("subline").textContent = `${longDate(START)} – ${longDate(END)} · ` + (C.ti < 0 ? `starts in ${diffDays(todayKey(), START)} days` : `${C.left} days left`);
     renderSync();
     renderTakeaway(A);
     renderRings();
@@ -563,7 +581,7 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
 
   function renderTakeaway(A) {
     const tk = el("takeaway");
-    if (C.ti < 0) { tk.textContent = "Your year starts on 1 October 2026."; return; }
+    if (C.ti < 0) { tk.textContent = `Your period starts on ${fmtDay(START, { weekday: "long", day: "numeric", month: "long" })}. Set your targets now; logging opens on day one.`; return; }
     const worst = ACTS.map((a) => ({ a, s: C.acts[a.k] })).filter((x) => x.s.done < x.s.tgt).sort((x, y) => x.s.ratio - y.s.ratio)[0];
     tk.replaceChildren();
     const b = (t) => { const e = document.createElement("b"); e.textContent = t; return e; };
@@ -755,9 +773,9 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
 
   function renderCalendar() {
     const tk = todayKey();
-    if (!S.calMonth) S.calMonth = MONTHS.includes(tk.slice(0, 7)) ? tk.slice(0, 7) : (tk < START ? MONTHS[0] : MONTHS[11]);
+    if (!S.calMonth) S.calMonth = MONTHS.includes(tk.slice(0, 7)) ? tk.slice(0, 7) : (tk < START ? MONTHS[0] : MONTHS[MONTHS.length - 1]);
     const mk = S.calMonth; el("cal-month").textContent = monthName(mk);
-    el("cal-prev").disabled = mk === MONTHS[0]; el("cal-next").disabled = mk === MONTHS[11];
+    el("cal-prev").disabled = mk === MONTHS[0]; el("cal-next").disabled = mk === MONTHS[MONTHS.length - 1];
     const cal = el("cal"); cal.replaceChildren();
     ["M", "T", "W", "T", "F", "S", "S"].forEach((d) => { const e = document.createElement("div"); e.className = "wd"; e.textContent = d; cal.append(e); });
     const first = parse(mk + "-01"); const lead = (first.getDay() + 6) % 7;
@@ -885,6 +903,7 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
   let logKey = null;
   function openLog(k) {
     const tk = todayKey();
+    if (tk < START) { toast(`Logging opens on ${longDate(START)}`); return; }
     logKey = k || (tk < START ? START : tk > END ? END : tk);
     const inp = el("log-date"); inp.min = START; inp.max = tk < END ? tk : END; inp.value = logKey;
     fillEntries(); el("log-err").hidden = true; el("log-scrim").hidden = false;
@@ -929,10 +948,14 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
       f.innerHTML = `<label for="t-${a.k}">${a.name} (${a.unit === "m" ? "metres" : "km"})</label><input type="number" id="t-${a.k}" min="1" step="any" inputmode="decimal" value="${T[a.k]}">`;
       box.append(f);
     });
-    el("t-week").value = weekGoal(); el("set-err").hidden = true; el("set-scrim").hidden = false;
+    el("t-week").value = weekGoal(); el("t-start").value = START; el("t-end").value = END; el("set-err").hidden = true; el("set-scrim").hidden = false;
     const cfg = sheetCfg(); el("s-url").value = cfg ? cfg.url : ""; el("s-token").value = cfg ? cfg.token : ""; el("s-err").hidden = true;
     el("s-off").disabled = !cfg;
   }
+  el("t-start").addEventListener("change", () => {
+    const st = el("t-start").value;
+    if (isDate(st)) el("t-end").value = addDays(addYear(st), -1);
+  });
   el("s-on").addEventListener("click", async () => {
     const url = el("s-url").value.trim(), token = el("s-token").value.trim();
     if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url) || !token) { showErr("s-err", "Paste the full web app URL (it starts with https://script.google.com/) and your token."); return; }
@@ -958,8 +981,11 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
     ACTS.forEach((a) => { const n = Number(el("t-" + a.k).value); if (!(n > 0)) bad = true; t[a.k] = n; });
     const w = Math.round(Number(el("t-week").value));
     if (bad || !(w >= 1 && w <= 7)) { showErr("set-err", "Targets must be above 0 and active days between 1 and 7."); return; }
+    const st = el("t-start").value, en = el("t-end").value;
+    if (!isDate(st) || !isDate(en) || diffDays(st, en) < 27) { showErr("set-err", "Pick a start and end date at least 4 weeks apart."); return; }
+    if (diffDays(st, en) > 3 * 366) { showErr("set-err", "Keep the period to 3 years or less."); return; }
     el("set-save").disabled = true;
-    try { await saveSettings({ targets: t, weekGoal: w }); el("set-scrim").hidden = true; toast("Goals saved"); }
+    try { await saveSettings({ targets: t, weekGoal: w, start: st, end: en }); el("set-scrim").hidden = true; toast("Goals saved"); }
     catch (e) { showErr("set-err", saveErrMsg(e)); }
     finally { el("set-save").disabled = false; }
   });
@@ -993,7 +1019,7 @@ input[type="date"], input[type="number"], .field input { font: inherit; font-siz
   el("set-targets").addEventListener("click", openSettings);
   el("hide-demo").addEventListener("click", () => { S.demoHidden = true; try { localStorage.setItem("yim-demo-hidden", "1"); } catch (e) {} render(); });
   el("cal-prev").addEventListener("click", () => { const i = MONTHS.indexOf(S.calMonth); if (i > 0) { S.calMonth = MONTHS[i - 1]; renderCalendar(); } });
-  el("cal-next").addEventListener("click", () => { const i = MONTHS.indexOf(S.calMonth); if (i < 11) { S.calMonth = MONTHS[i + 1]; renderCalendar(); } });
+  el("cal-next").addEventListener("click", () => { const i = MONTHS.indexOf(S.calMonth); if (i >= 0 && i < MONTHS.length - 1) { S.calMonth = MONTHS[i + 1]; renderCalendar(); } });
 
   // ---------- persistence ----------
   // Three backends, picked at start:
