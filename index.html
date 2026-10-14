@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07090C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3F4F6" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Motion">
+<title>Year in Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-first single column of "instrument" panels; on wide screens a 12-col grid —
+   pace rings + activity cards up top, the big cumulative chart, then calendar / milestones / rhythm. */
+:root {
+  --bg: #F3F4F6; --surface: #FFFFFF; --surface-2: #EEF0F3; --line: #DDE1E7;
+  --fg: #0E1116; --muted: #5E6776; --faint: #9AA2AF;
+  --swim: #0A93C7; --run: #E2501E; --cycle: #0F9E6E; --walk: #7A55DD;
+  --swim-soft: rgba(10,147,199,.16); --run-soft: rgba(226,80,30,.16); --cycle-soft: rgba(15,158,110,.16); --walk-soft: rgba(122,85,221,.16);
+  --good: #0F9E6E; --warn: #B7791F; --bad: #D93A3A;
+  --shadow: 0 1px 2px rgba(14,17,22,.06), 0 8px 24px rgba(14,17,22,.05);
+  --scrim: rgba(14,17,22,.45);
+  --font-num: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 18px; --r-sm: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #07090C; --surface: #111419; --surface-2: #181C23; --line: #232833;
+  --fg: #F1F3F6; --muted: #8C95A4; --faint: #586070;
+  --swim: #38C8F4; --run: #FF6B3D; --cycle: #3EDC9C; --walk: #B38DFF;
+  --swim-soft: rgba(56,200,244,.18); --run-soft: rgba(255,107,61,.18); --cycle-soft: rgba(62,220,156,.18); --walk-soft: rgba(179,141,255,.18);
+  --good: #3EDC9C; --warn: #F5B942; --bad: #FF6464;
+  --shadow: none; --scrim: rgba(0,0,0,.6);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #07090C; --surface: #111419; --surface-2: #181C23; --line: #232833;
+  --fg: #F1F3F6; --muted: #8C95A4; --faint: #586070;
+  --swim: #38C8F4; --run: #FF6B3D; --cycle: #3EDC9C; --walk: #B38DFF;
+  --swim-soft: rgba(56,200,244,.18); --run-soft: rgba(255,107,61,.18); --cycle-soft: rgba(62,220,156,.18); --walk-soft: rgba(179,141,255,.18);
+  --good: #3EDC9C; --warn: #F5B942; --bad: #FF6464;
+  --shadow: none; --scrim: rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+.app { max-width: 1180px; margin-inline: auto; padding-inline: 16px; padding-block: 18px 110px; display: grid; gap: 14px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--font-num); font-weight: 700; font-size: 30px; letter-spacing: -.01em; line-height: 1; }
+.brand .sub { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.top-actions { display: flex; gap: 8px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.pill.ok .dot { background: var(--good); } .pill.warn .dot { background: var(--warn); }
+.icon-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.banner { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--r-sm); background: var(--surface-2); border: 1px dashed var(--line); font-size: 13px; }
+.banner b { font-weight: 600; }
+.link-btn { background: none; border: 0; padding: 4px 0; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+
+.takeaway { font-size: 17px; font-weight: 500; line-height: 1.4; max-width: 62ch; }
+.takeaway b { font-weight: 700; }
+
+/* panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow); min-width: 0; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.panel-head h2 { font-size: 15px; font-weight: 600; }
+.panel-head .note { font-size: 12px; color: var(--muted); }
+
+.grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  .grid { grid-template-columns: repeat(12, 1fr); }
+  .span-5 { grid-column: span 5; } .span-7 { grid-column: span 7; } .span-12 { grid-column: span 12; }
+  .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+}
+
+/* hero rings */
+.hero { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr); gap: 18px; align-items: center; }
+@media (max-width: 460px) { .hero { grid-template-columns: 1fr; justify-items: center; } }
+.rings-wrap { position: relative; width: 100%; max-width: 210px; aspect-ratio: 1; }
+.rings-wrap svg { width: 100%; height: 100%; display: block; }
+.rings-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.rings-center .big { font-size: 38px; font-weight: 700; line-height: .9; }
+.rings-center .big small { font-size: 18px; font-weight: 600; }
+.rings-center .label { margin-top: 4px; font-size: 9px; letter-spacing: .1em; }
+.legend { display: grid; gap: 10px; width: 100%; }
+.legend-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; }
+.legend-row .sw { width: 10px; height: 10px; border-radius: 3px; }
+.legend-row .nm { font-size: 14px; font-weight: 500; }
+.legend-row .vl { font-size: 20px; font-weight: 600; text-align: right; }
+.legend-row .vl small { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+.hero-foot { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.mini-stat { background: var(--surface-2); border-radius: var(--r-sm); padding: 10px 12px; }
+.mini-stat .v { font-size: 24px; font-weight: 700; line-height: 1.05; margin-top: 2px; }
+.mini-stat .v small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.mini-stat .label { font-size: 10px; }
+
+/* activity cards */
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); display: grid; gap: 12px; min-width: 0; text-align: left; transition: border-color .2s; }
+.card[aria-pressed="true"] { border-color: var(--c); }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.card-name .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--soft); color: var(--c); }
+.card-name .ic svg { width: 16px; height: 16px; }
+.status { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; }
+.status.good { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.status.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.status.idle { color: var(--muted); background: var(--surface-2); }
+.card-main { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.card-main .done { font-size: 40px; font-weight: 700; line-height: .95; }
+.card-main .of { color: var(--muted); font-size: 14px; }
+.bar { position: relative; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: visible; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--c); }
+.bar .tick { position: absolute; top: -4px; width: 2px; height: 16px; border-radius: 2px; background: var(--fg); opacity: .7; }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.kv .label { font-size: 10px; letter-spacing: .07em; }
+.kv .v { font-size: 19px; font-weight: 600; line-height: 1.15; }
+.kv .v small { font-size: 11px; color: var(--muted); font-weight: 500; }
+.spark { width: 100%; height: 44px; display: block; }
+
+/* segmented */
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.seg button .d { width: 7px; height: 7px; border-radius: 50%; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* charts */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .axis text, .chart text.t { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.chart .grid-line { stroke: var(--line); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); min-width: 140px; z-index: 5; }
+.tip .tt { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+.tip .tr { display: flex; justify-content: space-between; gap: 12px; }
+.tip .tr b { font-family: var(--font-num); font-size: 14px; font-weight: 600; }
+.chart-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-legend i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--c, var(--muted)); }
+.chart-legend i.dash { border-top-style: dashed; }
+.big-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); gap: 8px; margin-bottom: 14px; }
+
+/* calendar */
+.cal-nav { display: flex; align-items: center; gap: 6px; }
+.cal-nav .m { font-weight: 600; min-width: 116px; text-align: center; font-size: 14px; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
+.cal .wd { text-align: center; font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--faint); padding-bottom: 4px; }
+.day { position: relative; aspect-ratio: 1; border-radius: 10px; border: 1px solid transparent; background: transparent; padding: 0; display: grid; place-items: center; min-width: 0; }
+.day:not(:disabled):hover { background: var(--surface-2); }
+.day:disabled { cursor: default; opacity: .35; }
+.day.today { border-color: var(--fg); }
+.day svg { width: 82%; height: 82%; }
+.day .dn { position: absolute; font-size: 10px; font-weight: 600; color: var(--muted); }
+.day.has .dn { color: var(--fg); }
+.cal-foot { margin-top: 10px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+
+/* milestone list */
+.ms-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+.ms-table th { text-align: right; font-weight: 600; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.ms-table th:first-child, .ms-table td:first-child { text-align: left; }
+.ms-table td { text-align: right; padding: 7px 4px; border-bottom: 1px solid var(--line); font-family: var(--font-num); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ms-table tr.cur td { font-weight: 700; }
+.ms-table td.ok { color: var(--good); }
+.table-scroll { overflow-x: auto; }
+
+/* rhythm */
+.rhythm { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.week-dots { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; }
+.wdot { display: grid; gap: 4px; justify-items: center; font-size: 11px; color: var(--muted); }
+.wdot .b { width: 100%; max-width: 38px; aspect-ratio: 1; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; }
+.wdot .b.on { background: var(--fg); color: var(--bg); }
+.wdot .b svg { width: 60%; height: 60%; }
+
+/* FAB + sheets */
+.fab { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 15px 22px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 15px; box-shadow: 0 10px 30px rgba(0,0,0,.28); }
+.fab svg { width: 18px; height: 18px; }
+@media (min-width: 900px) { .fab { right: max(16px, calc((100vw - 1180px) / 2 + 16px)); } }
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 30; display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) { .scrim { align-items: center; } }
+.sheet { width: 100%; max-width: 460px; max-height: 92vh; overflow: auto; background: var(--surface); border-radius: 22px 22px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); border: 1px solid var(--line); }
+@media (min-width: 640px) { .sheet { border-radius: 22px; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.sheet-head h2 { font-family: var(--font-num); font-size: 24px; font-weight: 700; }
+.date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.date-row input { flex: 1; min-width: 0; }
+input[type="date"], input[type="number"], .field input { font: inherit; font-size: 16px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; }
+.entry { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
+.entry-top { display: grid; grid-template-columns: auto 1fr minmax(0, 132px); gap: 10px; align-items: center; }
+.entry .ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--soft); color: var(--c); }
+.entry .ic svg { width: 18px; height: 18px; }
+.entry .nm { font-weight: 600; }
+.entry .nm small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+.in-unit { position: relative; }
+.in-unit input { padding-right: 38px; text-align: right; font-family: var(--font-num); font-size: 20px; font-weight: 600; }
+.in-unit span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; padding-left: 42px; }
+.chips button { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.chips button:hover { color: var(--c); border-color: var(--c); }
+.sheet-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn { flex: 1; border-radius: 14px; padding: 13px 16px; font-weight: 700; border: 1px solid var(--line); background: var(--surface-2); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn:disabled { opacity: .5; cursor: default; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.field { display: grid; gap: 6px; margin-bottom: 12px; }
+.field label { font-size: 13px; font-weight: 600; }
+.err { color: var(--bad); font-size: 13px; margin-top: 8px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; z-index: 40; }
+.foot { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ring-arc { transition: stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1); }
+  .bar .fill { transition: width .7s cubic-bezier(.2,.8,.2,1); }
+}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Year in Motion</h1>
+      <div class="sub" id="subline">1 Oct 2026 – 30 Sep 2027</div>
+    </div>
+    <div class="top-actions">
+      <span class="pill" id="sync"><span class="dot"></span><span id="sync-t">Connecting</span></span>
+      <button class="icon-btn" id="open-settings" aria-label="Goals and settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="demo-banner" hidden>
+    <span><b>Sample data.</b> These numbers are made up so you can see how the page works. Log your first workout and they disappear.</span>
+    <button class="link-btn" id="hide-demo">Hide sample</button>
+  </div>
+  <div class="banner" id="targets-banner" hidden>
+    <span><b>Example targets.</b> Set your own yearly distances to make the pace numbers yours.</span>
+    <button class="link-btn" id="set-targets">Set targets</button>
+  </div>
+
+  <p class="takeaway" id="takeaway">Loading your year…</p>
+
+  <section class="grid" aria-label="Overview">
+    <div class="panel span-5" id="pace-panel">
+      <div class="panel-head"><h2>Pace today</h2><span class="note">Done ÷ where an even pace puts you today</span></div>
+      <div class="hero">
+        <div class="rings-wrap">
+          <svg id="rings" viewBox="0 0 220 220" role="img" aria-label="Pace rings"></svg>
+          <div class="rings-center"><div class="big num" id="score">—</div><div class="label">Overall pace</div></div>
+        </div>
+        <div class="legend" id="ring-legend"></div>
+      </div>
+      <div class="hero-foot">
+        <div class="mini-stat"><div class="label">Day</div><div class="v num" id="st-day">—</div></div>
+        <div class="mini-stat"><div class="label">Active this week</div><div class="v num" id="st-week">—</div></div>
+        <div class="mini-stat"><div class="label">Streak</div><div class="v num" id="st-streak">—</div></div>
+      </div>
+    </div>
+    <div class="cards span-7" id="cards"></div>
+  </section>
+
+  <section class="panel" id="trajectory" aria-label="Trajectory">
+    <div class="panel-head">
+      <h2 id="traj-title">Year trajectory</h2>
+      <div class="seg" id="seg" role="group" aria-label="Activity"></div>
+    </div>
+    <div class="big-stats" id="traj-stats"></div>
+    <div class="chart" id="traj-chart"></div>
+    <div class="chart-legend" id="traj-legend"></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel span-5" id="calendar">
+      <div class="panel-head">
+        <h2>Calendar</h2>
+        <div class="cal-nav">
+          <button class="icon-btn" id="cal-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <span class="m" id="cal-month">—</span>
+          <button class="icon-btn" id="cal-next" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="cal-foot"><span>Each ring fills at one day's share of the yearly target. Tap a day to log or edit it.</span></div>
+    </div>
+    <div class="panel span-7" id="milestones">
+      <div class="panel-head"><h2 id="ms-title">Monthly milestones</h2><span class="note">Shortfalls carry into the next month</span></div>
+      <div class="chart" id="ms-chart"></div>
+      <div class="chart-legend" id="ms-legend"></div>
+      <div class="table-scroll"><table class="ms-table" id="ms-table"></table></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel span-7" id="weekly">
+      <div class="panel-head"><h2 id="wk-title">Weekly volume</h2><span class="note">Monday to Sunday · line = weekly pace needed now</span></div>
+      <div class="chart" id="wk-chart"></div>
+    </div>
+    <div class="panel span-5" id="rhythm">
+      <div class="panel-head"><h2>Consistency</h2><span class="note" id="rh-note">Since 1 Oct</span></div>
+      <div class="rhythm">
+        <div>
+          <div class="label" style="margin-bottom:8px">This week</div>
+          <div class="week-dots" id="week-dots"></div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:8px">Active days by weekday</div>
+          <div class="chart" id="dow-chart"></div>
+        </div>
+      </div>
+      <div class="hero-foot">
+        <div class="mini-stat"><div class="label">Active days</div><div class="v num" id="rh-active">—</div></div>
+        <div class="mini-stat"><div class="label">Best streak</div><div class="v num" id="rh-best">—</div></div>
+        <div class="mini-stat"><div class="label">Weeks hit goal</div><div class="v num" id="rh-weeks">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">Pace = distance done ÷ (target × days elapsed ÷ 365). Needed per day = what's left ÷ days left, today included. Projection = done so far + your last-28-day daily average × the days after today. Swimming is in metres; everything else in kilometres.</p>
+</main>
+
+<button class="fab" id="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Log workout</button>
+
+<div class="scrim" id="log-scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="log-h">
+    <div class="sheet-head"><h2 id="log-h">Log workout</h2><button class="icon-btn" data-close="log" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="date-row">
+      <button class="icon-btn" id="d-prev" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <input type="date" id="log-date" aria-label="Date">
+      <button class="icon-btn" id="d-next" aria-label="Next day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div id="entries"></div>
+    <div class="err" id="log-err" hidden></div>
+    <div class="sheet-actions">
+      <button class="btn" data-close="log">Cancel</button>
+      <button class="btn primary" id="log-save">Save day</button>
+    </div>
+    <p class="hint">These are the day's totals. Two runs on one day? Tap a quick-add twice or type the sum. Clear a box to remove it.</p>
+  </div>
+</div>
+
+<div class="scrim" id="set-scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="set-h">
+    <div class="sheet-head"><h2 id="set-h">Goals</h2><button class="icon-btn" data-close="set" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="muted" style="margin:0 0 14px;font-size:13px">Yearly targets for 1 Oct 2026 – 30 Sep 2027.</p>
+    <div id="target-fields"></div>
+    <div class="field"><label for="t-week">Active days per week</label><input type="number" id="t-week" min="1" max="7" step="1" inputmode="numeric"></div>
+    <div class="err" id="set-err" hidden></div>
+    <div class="sheet-actions">
+      <button class="btn" data-close="set">Cancel</button>
+      <button class="btn primary" id="set-save">Save goals</button>
+    </div>
+    <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+      <div class="label" style="margin-bottom:8px">Sync with Google Sheet</div>
+      <p class="hint" style="margin:0 0 10px" id="sync-help">Paste the web app URL and token from your Apps Script to sync between phone and laptop. Leave empty to keep data on this device only.</p>
+      <div class="field"><label for="s-url">Web app URL</label><input type="url" id="s-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="s-token">Token</label><input type="text" id="s-token" autocomplete="off" spellcheck="false"></div>
+      <div class="sheet-actions" style="margin-top:4px">
+        <button class="btn" id="s-off">Disconnect</button>
+        <button class="btn primary" id="s-on">Connect</button>
+      </div>
+      <div class="err" id="s-err" hidden></div>
+    </div>
+    <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+      <div class="label" style="margin-bottom:8px">Your data</div>
+      <button class="btn" id="export" style="width:100%">Export CSV</button>
+      <p class="hint" id="export-note">One row per day with all four activities. Opens in Excel or DuckDB.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(() => {
+  "use strict";
+  // ---------- constants ----------
+  const START = "2026-10-01", END = "2027-09-30";
+  const ACTS = [
+    { k: "swim",  name: "Swimming", short: "Swim",  unit: "m",  dec: 0, quick: [250, 500, 1000], def: 50000,
+      icon: '<path d="M2 16c2 0 2-1.5 4-1.5S8 16 10 16s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="16" cy="6" r="2"/><path d="M5 12l4-4 3 2 3-2"/>' },
+    { k: "run",   name: "Running",  short: "Run",   unit: "km", dec: 1, quick: [1, 5, 10], def: 600,
+      icon: '<circle cx="14" cy="4.5" r="2"/><path d="M8 21l3-6 3 2v5"/><path d="M6 12l3-4h5l2 4 3 1"/><path d="M11 8l-1 6"/>' },
+    { k: "cycle", name: "Cycling",  short: "Cycle", unit: "km", dec: 1, quick: [5, 10, 25], def: 2000,
+      icon: '<circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17l4-8h6l3 8M9.5 9L12 17h1.5"/><circle cx="15" cy="5" r="1.5"/>' },
+    { k: "walk",  name: "Walking",  short: "Walk",  unit: "km", dec: 1, quick: [1, 3, 5], def: 1200,
+      icon: '<circle cx="13" cy="4.5" r="2"/><path d="M10 21l2-6 3 3v3"/><path d="M8 12l2-4h4l2 4"/><path d="M12 8l-1 7"/>' },
+  ];
+  const DEF_WEEK = 4;
+  const svgIcon = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+  // ---------- dates (local calendar days) ----------
+  const pad = (n) => String(n).padStart(2, "0");
+  const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parse = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const addDays = (k, n) => { const d = parse(k); d.setDate(d.getDate() + n); return keyOf(d); };
+  const diffDays = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+  const N = diffDays(START, END) + 1;
+  const DAYS = Array.from({ length: N }, (_, i) => addDays(START, i));
+  const MONTHS = []; for (let i = 0; i < 12; i++) { const d = parse(START); d.setMonth(d.getMonth() + i); MONTHS.push(keyOf(d).slice(0, 7)); }
+  const fmtDay = (k, o = { weekday: "short", day: "numeric", month: "short" }) => parse(k).toLocaleDateString("en-GB", o);
+  const monthName = (mk, o = { month: "long", year: "numeric" }) => parse(mk + "-01").toLocaleDateString("en-GB", o);
+  const todayKey = () => keyOf(new Date());
+
+  // ---------- state ----------
+  const S = {
+    settings: null,          // {targets:{swim..}, weekGoal}
+    months: {},              // "2026-10" -> {"2026-10-01": {swim: 1500}}
+    mode: "loading",         // loading | sync | local
+    db: null, uid: null,
+    demoHidden: false,
+    sel: "run",
+    calMonth: null,
+  };
+  try { S.demoHidden = localStorage.getItem("yim-demo-hidden") === "1"; const s = localStorage.getItem("yim-sel"); if (s) S.sel = s; } catch (e) {}
+
+  const targets = () => {
+    const t = (S.settings && S.settings.targets) || {};
+    const o = {}; ACTS.forEach((a) => { o[a.k] = Number(t[a.k]) > 0 ? Number(t[a.k]) : a.def; }); return o;
+  };
+  const weekGoal = () => { const w = S.settings && Number(S.settings.weekGoal); return w >= 1 && w <= 7 ? w : DEF_WEEK; };
+  const realLog = () => { const o = {}; Object.values(S.months).forEach((m) => Object.assign(o, m)); return o; };
+  const hasReal = () => Object.keys(realLog()).length > 0;
+
+  // deterministic sample generator, used only when nothing is logged yet
+  function sampleLog() {
+    // sized from the targets so the example looks like a real, slightly uneven training year
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const T = targets(); const wk = (k) => T[k] / 52;
+    const o = {}; const ti = todayIdx();
+    for (let i = 0; i <= ti; i++) {
+      const k = DAYS[i], wd = parse(k).getDay(), e = {};
+      if (wd === 3 && rnd() > .15) e.swim = Math.round(wk("swim") * (.8 + rnd() * .5) / 50) * 50;
+      if ((wd === 2 || wd === 6) && rnd() > .2) e.run = +(wk("run") * (.4 + rnd() * .25)).toFixed(1);
+      if (wd === 0 && rnd() > .3) e.cycle = +(wk("cycle") * (.7 + rnd() * .5)).toFixed(1);
+      if ((wd === 1 || wd === 4 || wd === 5) && rnd() > .25) e.walk = +(wk("walk") * (.3 + rnd() * .15)).toFixed(1);
+      if (Object.keys(e).length) o[k] = e;
+    }
+    return o;
+  }
+  const isDemo = () => S.mode !== "loading" && !hasReal() && !S.demoHidden;
+  const log = () => (isDemo() ? sampleLog() : realLog());
+
+  function todayIdx() { const t = todayKey(); if (t < START) return -1; if (t > END) return N - 1; return diffDays(START, t); }
+
+  // ---------- analytics ----------
+  function compute() {
+    const L = log(), T = targets(), ti = todayIdx(), elapsed = ti + 1;
+    const series = {}; ACTS.forEach((a) => (series[a.k] = DAYS.map((k) => Number((L[k] || {})[a.k]) || 0)));
+    const out = { ti, elapsed, left: N - Math.max(ti, 0), acts: {} };
+    ACTS.forEach((a) => {
+      const v = series[a.k], tgt = T[a.k];
+      let done = 0; const cum = []; for (let i = 0; i < N; i++) { if (i <= ti) done += v[i]; cum.push(i <= ti ? done : null); }
+      const expected = tgt * elapsed / N;
+      const remaining = Math.max(0, tgt - done);
+      const left = N - Math.max(ti, 0);
+      const win = Math.max(1, Math.min(28, elapsed));
+      let w = 0; for (let i = Math.max(0, ti - win + 1); i <= ti; i++) w += v[i];
+      const pace28 = elapsed > 0 ? w / win : 0;
+      const after = N - 1 - ti;
+      const projected = done + pace28 * after;
+      const ratio = expected > 0 ? done / expected : 0;
+      let status, cls;
+      if (done >= tgt) { status = "Complete"; cls = "good"; }
+      else if (done === 0) { status = "Not started"; cls = "idle"; }
+      else if (projected >= tgt) { status = "On track"; cls = "good"; }
+      else if (projected >= tgt * .9) { status = "Close"; cls = "warn"; }
+      else { status = "Behind"; cls = "bad"; }
+      // months with carry-over
+      const ms = []; let carry = 0;
+      MONTHS.forEach((mk, mi) => {
+        const idx = DAYS.map((k, i) => (k.startsWith(mk) ? i : -1)).filter((i) => i >= 0);
+        const base = tgt * idx.length / N;
+        const mdone = idx.reduce((s, i) => s + (i <= ti ? v[i] : 0), 0);
+        const started = idx[0] <= ti;
+        const goal = started ? Math.max(0, base + carry) : base;
+        ms.push({ mk, base, carry: started ? carry : null, goal, done: mdone, started, current: started && idx[idx.length - 1] >= ti });
+        if (started) carry += base - mdone;
+      });
+      // weeks (Mon-Sun) touching the period, up to the current week
+      const weeks = [];
+      const firstMon = (() => { const d = parse(START); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return keyOf(d); })();
+      for (let ws = firstMon; ws <= (ti >= 0 ? DAYS[ti] : START); ws = addDays(ws, 7)) {
+        let s = 0; for (let j = 0; j < 7; j++) { const i = diffDays(START, addDays(ws, j)); if (i >= 0 && i < N && i <= ti) s += v[i]; }
+        weeks.push({ ws, v: s });
+      }
+      out.acts[a.k] = { v, cum, done, tgt, expected, remaining, left, neededDay: remaining / left, neededWeek: remaining / left * 7, pace28, projected, ratio, status, cls, ms, weeks, win };
+    });
+    // consistency
+    const active = DAYS.map((k, i) => i <= ti && ACTS.some((a) => series[a.k][i] > 0));
+    let streak = 0; { let i = ti; if (i >= 0 && !active[i]) i--; while (i >= 0 && active[i]) { streak++; i--; } }
+    let best = 0, run = 0; active.forEach((x) => { run = x ? run + 1 : 0; best = Math.max(best, run); });
+    const t = todayKey(); const wd = (parse(t).getDay() + 6) % 7; const mon = addDays(t, -wd);
+    const week = Array.from({ length: 7 }, (_, j) => { const k = addDays(mon, j); const i = diffDays(START, k); return { k, i, on: i >= 0 && i < N && active[i], future: k > t, acts: ACTS.filter((a) => i >= 0 && i < N && series[a.k][i] > 0).map((a) => a.k) }; });
+    const dow = [0, 0, 0, 0, 0, 0, 0]; active.forEach((x, i) => { if (x) dow[(parse(DAYS[i]).getDay() + 6) % 7]++; });
+    // completed weeks that hit goal
+    let wkHit = 0, wkTot = 0;
+    const weeksAll = out.acts.run.weeks.map((w) => w.ws);
+    weeksAll.forEach((ws) => {
+      const end = addDays(ws, 6); if (end >= t) return; // only finished weeks
+      let c = 0; for (let j = 0; j < 7; j++) { const i = diffDays(START, addDays(ws, j)); if (i >= 0 && i < N && active[i]) c++; }
+      const daysIn = Array.from({ length: 7 }, (_, j) => diffDays(START, addDays(ws, j))).filter((i) => i >= 0 && i < N).length;
+      if (daysIn < 7) return; wkTot++; if (c >= weekGoal()) wkHit++;
+    });
+    out.cons = { active, streak, best, week, weekCount: week.filter((d) => d.on).length, dow, activeDays: active.filter(Boolean).length, wkHit, wkTot };
+    const rs = ACTS.map((a) => Math.min(out.acts[a.k].ratio, 1.5));
+    out.score = elapsed > 0 ? rs.reduce((s, x) => s + x, 0) / rs.length : 0;
+    out.series = series;
+    return out;
+  }
+
+  // ---------- formatting ----------
+  const fmt = (a, x, opt = {}) => {
+    if (x == null || !isFinite(x)) return "—";
+    const dec = opt.dec != null ? opt.dec : (a.unit === "m" ? 0 : (Math.abs(x) >= 100 ? 0 : 1));
+    return x.toLocaleString("en-GB", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  };
+  const fmtBig = (a, x) => {
+    if (a.unit === "m" && x >= 10000) return { n: (x / 1000).toLocaleString("en-GB", { maximumFractionDigits: 1 }), u: "km" };
+    return { n: fmt(a, x), u: a.unit };
+  };
+  const pct = (x) => (isFinite(x) ? Math.round(x * 100) + "%" : "—");
+  const el = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // ---------- render ----------
+  let C = null;
+  function render() {
+    C = compute();
+    const A = Object.fromEntries(ACTS.map((a) => [a.k, a]));
+    el("demo-banner").hidden = !isDemo();
+    el("targets-banner").hidden = S.mode === "loading" || !!(S.settings && S.settings.targets);
+    el("subline").textContent = `1 Oct 2026 – 30 Sep 2027 · ${C.left} days left`;
+    renderSync();
+    renderTakeaway(A);
+    renderRings();
+    renderCards();
+    renderSeg();
+    renderTrajectory();
+    renderCalendar();
+    renderMilestones();
+    renderWeekly();
+    renderRhythm();
+  }
+
+  let renderSync = () => {};
+
+  function renderTakeaway(A) {
+    const tk = el("takeaway");
+    if (C.ti < 0) { tk.textContent = "Your year starts on 1 October 2026."; return; }
+    const worst = ACTS.map((a) => ({ a, s: C.acts[a.k] })).filter((x) => x.s.done < x.s.tgt).sort((x, y) => x.s.ratio - y.s.ratio)[0];
+    tk.replaceChildren();
+    const b = (t) => { const e = document.createElement("b"); e.textContent = t; return e; };
+    const tx = (t) => document.createTextNode(t);
+    if (!worst) { tk.append(tx("All four targets are complete. "), b("Nice work.")); return; }
+    const s = worst.s, a = worst.a;
+    const gap = s.expected - s.done;
+    if (gap > 0) {
+      tk.append(b(a.name), tx(` is ${fmt(a, gap)} ${a.unit} behind an even pace. `), tx("Average "), b(`${fmt(a, s.neededWeek)} ${a.unit} a week`), tx(` from now to reach ${fmt(a, s.tgt, { dec: 0 })} ${a.unit}.`));
+    } else {
+      tk.append(tx("Every activity is at or ahead of an even pace. Your tightest is "), b(a.name.toLowerCase()), tx(`: keep ${fmt(a, s.neededWeek)} ${a.unit} a week.`));
+    }
+  }
+
+  function renderRings() {
+    const svg = d3.select("#rings"); svg.selectAll("*").remove();
+    const cx = 110, cy = 110, w = 11, gap = 3;
+    ACTS.forEach((a, i) => {
+      const r = 100 - i * (w + gap) - w / 2; const circ = 2 * Math.PI * r;
+      const s = C.acts[a.k]; const ratio = Math.max(0, s.ratio);
+      svg.append("circle").attr("cx", cx).attr("cy", cy).attr("r", r).attr("fill", "none").attr("stroke", `var(--${a.k}-soft)`).attr("stroke-width", w);
+      const first = Math.min(ratio, 1);
+      svg.append("circle").attr("class", "ring-arc").attr("cx", cx).attr("cy", cy).attr("r", r).attr("fill", "none")
+        .attr("stroke", `var(--${a.k})`).attr("stroke-width", w).attr("stroke-linecap", "round")
+        .attr("transform", `rotate(-90 ${cx} ${cy})`).attr("stroke-dasharray", circ).attr("stroke-dashoffset", circ * (1 - first) + (first >= 1 ? 0 : 0.0001));
+      if (ratio > 1) {
+        const lap = Math.min(ratio - 1, 1);
+        svg.append("circle").attr("cx", cx).attr("cy", cy).attr("r", r).attr("fill", "none").attr("stroke", `var(--${a.k})`)
+          .attr("stroke-width", w).attr("stroke-linecap", "round").attr("opacity", .55)
+          .attr("transform", `rotate(-90 ${cx} ${cy})`).attr("stroke-dasharray", `${circ * lap} ${circ}`);
+      }
+    });
+    el("score").innerHTML = C.elapsed > 0 ? `${Math.round(C.score * 100)}<small>%</small>` : "—";
+    const lg = el("ring-legend"); lg.replaceChildren();
+    ACTS.forEach((a) => {
+      const s = C.acts[a.k]; const row = document.createElement("div"); row.className = "legend-row";
+      row.innerHTML = `<span class="sw" style="background:var(--${a.k})"></span><span class="nm">${a.name}</span><span class="vl num">${C.elapsed > 0 ? Math.round(s.ratio * 100) : "—"}<small>%</small></span>`;
+      lg.append(row);
+    });
+    el("st-day").innerHTML = `${Math.max(0, C.elapsed)}<small> / ${N}</small>`;
+    el("st-week").innerHTML = `${C.cons.weekCount}<small> / ${weekGoal()}</small>`;
+    el("st-streak").innerHTML = `${C.cons.streak}<small> ${C.cons.streak === 1 ? "day" : "days"}</small>`;
+  }
+
+  function sparkPath(s, wpx, hpx) {
+    const ti = Math.max(C.ti, 0);
+    const x = d3.scaleLinear([0, N - 1], [2, wpx - 2]);
+    const y = d3.scaleLinear([0, Math.max(s.tgt, s.projected, 1)], [hpx - 2, 2]);
+    const ideal = `M${x(0)},${y(0)}L${x(N - 1)},${y(s.tgt)}`;
+    const act = d3.line().x((d, i) => x(i)).y((d) => y(d))(s.cum.slice(0, ti + 1));
+    const proj = `M${x(ti)},${y(s.done)}L${x(N - 1)},${y(s.projected)}`;
+    return { ideal, act, proj, end: [x(ti), y(s.done)] };
+  }
+
+  function renderCards() {
+    const box = el("cards"); box.replaceChildren();
+    ACTS.forEach((a) => {
+      const s = C.acts[a.k]; const big = fmtBig(a, s.done); const tg = fmtBig(a, s.tgt);
+      const card = document.createElement("button"); card.className = "card"; card.type = "button";
+      card.style.setProperty("--c", `var(--${a.k})`); card.style.setProperty("--soft", `var(--${a.k}-soft)`);
+      card.setAttribute("aria-pressed", String(S.sel === a.k));
+      card.setAttribute("aria-label", `${a.name}: show in charts`);
+      const donePct = Math.min(1, s.done / s.tgt), expPct = Math.min(1, s.expected / s.tgt);
+      const sp = sparkPath(s, 260, 44);
+      card.innerHTML = `
+        <div class="card-top"><span class="card-name"><span class="ic">${svgIcon(a.icon)}</span>${a.name}</span><span class="status ${s.cls}">${s.status}</span></div>
+        <div class="card-main"><span class="done num">${big.n}</span><span class="of">${big.u} of ${tg.n} ${tg.u} · ${pct(s.done / s.tgt)}</span></div>
+        <div class="bar"><div class="fill" style="width:${donePct * 100}%"></div><div class="tick" style="left:calc(${expPct * 100}% - 1px)" title="Even pace today"></div></div>
+        <div class="kv">
+          <div><div class="label">Left</div><div class="v num">${fmt(a, s.remaining, { dec: a.unit === "m" ? 0 : 0 })}<small> ${a.unit}</small></div></div>
+          <div><div class="label">Need / wk</div><div class="v num">${fmt(a, s.neededWeek)}<small> ${a.unit}</small></div></div>
+          <div><div class="label">Projected</div><div class="v num">${fmtBig(a, s.projected).n}<small> ${fmtBig(a, s.projected).u}</small></div></div>
+        </div>
+        <svg class="spark" viewBox="0 0 260 44" preserveAspectRatio="none" aria-hidden="true">
+          <path d="${sp.ideal}" fill="none" stroke="var(--faint)" stroke-width="1.2" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+          <path d="${sp.proj}" fill="none" stroke="var(--${a.k})" stroke-width="1.6" stroke-dasharray="5 4" opacity=".6" vector-effect="non-scaling-stroke"/>
+          <path d="${sp.act || ""}" fill="none" stroke="var(--${a.k})" stroke-width="2.4" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        </svg>`;
+      card.addEventListener("click", () => select(a.k));
+      box.append(card);
+    });
+  }
+
+  function select(k) { S.sel = k; try { localStorage.setItem("yim-sel", k); } catch (e) {} render(); }
+
+  function renderSeg() {
+    const seg = el("seg"); seg.replaceChildren();
+    ACTS.forEach((a) => {
+      const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(S.sel === a.k));
+      b.innerHTML = `<span class="d" style="background:var(--${a.k})"></span>${a.short}`;
+      b.addEventListener("click", () => select(a.k)); seg.append(b);
+    });
+  }
+
+  // tooltip helper
+  function tipFor(container) {
+    let t = container.querySelector(".tip"); if (!t) { t = document.createElement("div"); t.className = "tip"; t.hidden = true; container.append(t); }
+    return {
+      show(html, px, py) {
+        t.innerHTML = html; t.hidden = false;
+        const W = container.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+        let left = px + 14; if (left + tw > W) left = px - tw - 14; if (left < 0) left = Math.max(0, W - tw);
+        let top = py - th - 10; if (top < 0) top = py + 14;
+        t.style.left = left + "px"; t.style.top = top + "px";
+      },
+      hide() { t.hidden = true; },
+    };
+  }
+
+  function renderTrajectory() {
+    const a = ACTS.find((x) => x.k === S.sel) || ACTS[1]; const s = C.acts[a.k];
+    el("traj-title").textContent = `${a.name} · year trajectory`;
+    const st = el("traj-stats"); st.replaceChildren();
+    const gap = s.done - s.expected;
+    [["Done", fmtBig(a, s.done)], ["Even pace today", fmtBig(a, s.expected)], [gap >= 0 ? "Ahead by" : "Behind by", fmtBig(a, Math.abs(gap))],
+     ["Need / day", { n: fmt(a, s.neededDay), u: a.unit }], [`Your ${s.win}-day avg`, { n: fmt(a, s.pace28), u: a.unit + "/day" }], ["Projected 30 Sep", fmtBig(a, s.projected)]]
+      .forEach(([l, v], i) => {
+        const d = document.createElement("div"); d.className = "mini-stat";
+        const color = i === 2 ? (gap >= 0 ? "var(--good)" : "var(--bad)") : i === 5 ? (s.projected >= s.tgt ? "var(--good)" : "var(--fg)") : "var(--fg)";
+        d.innerHTML = `<div class="label">${l}</div><div class="v num" style="color:${color}">${v.n}<small> ${v.u}</small></div>`;
+        st.append(d);
+      });
+
+    const box = el("traj-chart"); box.querySelector("svg")?.remove();
+    const W = Math.max(280, box.clientWidth), H = W < 520 ? 230 : 300;
+    const m = { t: 12, r: 14, b: 26, l: 46 };
+    const x = d3.scaleTime([parse(START), parse(END)], [m.l, W - m.r]);
+    const ymax = Math.max(s.tgt, s.projected, s.done) * 1.06;
+    const y = d3.scaleLinear([0, ymax], [H - m.b, m.t]).nice();
+    const svg = d3.select(box).insert("svg", ":first-child").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img")
+      .attr("aria-label", `${a.name} cumulative distance against target`);
+    const yt = y.ticks(5);
+    svg.append("g").selectAll("line").data(yt).join("line").attr("class", "grid-line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y);
+    const yf = (v) => (a.unit === "m" ? (v >= 1000 ? d3.format(",")(v / 1000) + "k" : v) : d3.format(",")(v));
+    svg.append("g").selectAll("text").data(yt).join("text").attr("class", "t").attr("x", m.l - 8).attr("y", (d) => y(d) + 4).attr("text-anchor", "end").text(yf);
+    const months = d3.timeMonth.range(parse(START), d3.timeDay.offset(parse(END), 1));
+    const step = W < 520 ? 2 : 1;
+    svg.append("g").selectAll("text").data(months.filter((d, i) => i % step === 0)).join("text").attr("class", "t")
+      .attr("x", (d) => x(d)).attr("y", H - 6).attr("text-anchor", "start").text((d) => d3.timeFormat("%b")(d));
+    // target line
+    svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(s.tgt)).attr("y2", y(s.tgt)).attr("stroke", "var(--fg)").attr("stroke-opacity", .35).attr("stroke-dasharray", "2 4");
+    svg.append("text").attr("class", "t").attr("x", W - m.r).attr("y", y(s.tgt) - 6).attr("text-anchor", "end").text(`Target ${fmtBig(a, s.tgt).n} ${fmtBig(a, s.tgt).u}`);
+    // ideal
+    svg.append("line").attr("x1", x(parse(START))).attr("y1", y(0)).attr("x2", x(parse(END))).attr("y2", y(s.tgt)).attr("stroke", "var(--muted)").attr("stroke-width", 1.4).attr("stroke-dasharray", "4 4");
+    const ti = C.ti;
+    if (ti >= 0) {
+      // area + actual
+      const gid = "g-" + a.k;
+      const defs = svg.append("defs"); const lg = defs.append("linearGradient").attr("id", gid).attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 1);
+      [[0, .32], [.5, .1], [1, 0]].forEach(([o, op]) => lg.append("stop").attr("offset", o).attr("style", `stop-color:var(--${a.k});stop-opacity:${op}`));
+      const pts = s.cum.slice(0, ti + 1).map((v, i) => [parse(DAYS[i]), v]);
+      svg.append("path").attr("d", d3.area().x((d) => x(d[0])).y0(y(0)).y1((d) => y(d[1]))(pts)).attr("fill", `url(#${gid})`);
+      // needed path (from today to target)
+      svg.append("line").attr("x1", x(parse(DAYS[ti]))).attr("y1", y(s.done)).attr("x2", x(parse(END))).attr("y2", y(s.tgt))
+        .attr("stroke", "var(--fg)").attr("stroke-width", 1.4).attr("stroke-opacity", .55);
+      // projection
+      svg.append("line").attr("x1", x(parse(DAYS[ti]))).attr("y1", y(s.done)).attr("x2", x(parse(END))).attr("y2", y(s.projected))
+        .attr("stroke", `var(--${a.k})`).attr("stroke-width", 2).attr("stroke-dasharray", "6 5").attr("opacity", .75);
+      svg.append("path").attr("d", d3.line().x((d) => x(d[0])).y((d) => y(d[1]))(pts)).attr("fill", "none").attr("stroke", `var(--${a.k})`).attr("stroke-width", 2.5).attr("stroke-linejoin", "round").attr("stroke-linecap", "round");
+      svg.append("circle").attr("cx", x(parse(DAYS[ti]))).attr("cy", y(s.done)).attr("r", 5).attr("fill", `var(--${a.k})`).attr("stroke", "var(--surface)").attr("stroke-width", 2);
+      svg.append("text").attr("class", "t").attr("x", W - m.r).attr("y", Math.min(H - m.b - 4, y(s.projected) + (s.projected < s.tgt ? 18 : -8))).attr("text-anchor", "end")
+        .attr("style", `fill:var(--${a.k});font-weight:600`).text(`Projected ${fmtBig(a, s.projected).n} ${fmtBig(a, s.projected).u}`);
+    }
+    // hover
+    const tip = tipFor(box);
+    const hl = svg.append("line").attr("y1", m.t).attr("y2", H - m.b).attr("stroke", "var(--faint)").attr("opacity", 0);
+    const dot = svg.append("circle").attr("r", 4).attr("fill", `var(--${a.k})`).attr("opacity", 0);
+    svg.append("rect").attr("x", m.l).attr("y", m.t).attr("width", W - m.l - m.r).attr("height", H - m.t - m.b).attr("fill", "transparent")
+      .on("pointermove", (ev) => {
+        const [px] = d3.pointer(ev); const i = Math.max(0, Math.min(N - 1, Math.round(diffDays(START, keyOf(x.invert(px))))));
+        const k = DAYS[i]; const ideal = s.tgt * (i + 1) / N; const xx = x(parse(k));
+        hl.attr("x1", xx).attr("x2", xx).attr("opacity", 1);
+        let html = `<div class="tt">${fmtDay(k, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</div>`;
+        if (i <= ti) {
+          dot.attr("cx", xx).attr("cy", y(s.cum[i])).attr("opacity", 1);
+          html += `<div class="tr"><span>Done</span><b>${fmt(a, s.cum[i])} ${a.unit}</b></div><div class="tr"><span>That day</span><b>${fmt(a, s.v[i])} ${a.unit}</b></div>`;
+        } else {
+          dot.attr("opacity", 0);
+          const pr = s.done + s.pace28 * (i - ti);
+          html += `<div class="tr"><span>Projected</span><b>${fmt(a, pr)} ${a.unit}</b></div>`;
+        }
+        html += `<div class="tr"><span>Even pace</span><b>${fmt(a, ideal)} ${a.unit}</b></div>`;
+        tip.show(html, xx, ev.offsetY ?? d3.pointer(ev)[1]);
+      })
+      .on("pointerleave", () => { tip.hide(); hl.attr("opacity", 0); dot.attr("opacity", 0); });
+    const lgd = el("traj-legend");
+    lgd.innerHTML = `<span><i style="--c:var(--${a.k});border-top-width:3px"></i>Done</span><span><i class="dash" style="--c:var(--muted)"></i>Even pace</span><span><i class="dash" style="--c:var(--${a.k})"></i>Projected at your ${s.win}-day average</span><span><i style="--c:var(--fg);opacity:.6"></i>Path to target from today</span>`;
+  }
+
+  function renderCalendar() {
+    const tk = todayKey();
+    if (!S.calMonth) S.calMonth = MONTHS.includes(tk.slice(0, 7)) ? tk.slice(0, 7) : (tk < START ? MONTHS[0] : MONTHS[11]);
+    const mk = S.calMonth; el("cal-month").textContent = monthName(mk);
+    el("cal-prev").disabled = mk === MONTHS[0]; el("cal-next").disabled = mk === MONTHS[11];
+    const cal = el("cal"); cal.replaceChildren();
+    ["M", "T", "W", "T", "F", "S", "S"].forEach((d) => { const e = document.createElement("div"); e.className = "wd"; e.textContent = d; cal.append(e); });
+    const first = parse(mk + "-01"); const lead = (first.getDay() + 6) % 7;
+    for (let i = 0; i < lead; i++) cal.append(document.createElement("div"));
+    const T = targets(); const L = log();
+    const dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= dim; d++) {
+      const k = `${mk}-${pad(d)}`; const e = L[k] || {};
+      const b = document.createElement("button"); b.type = "button"; b.className = "day";
+      const has = ACTS.some((a) => Number(e[a.k]) > 0);
+      if (has) b.classList.add("has"); if (k === tk) b.classList.add("today");
+      b.disabled = k > tk || k < START || k > END;
+      const parts = ACTS.filter((a) => Number(e[a.k]) > 0).map((a) => `${a.short} ${fmt(a, Number(e[a.k]))} ${a.unit}`);
+      b.setAttribute("aria-label", `${fmtDay(k)}${parts.length ? ": " + parts.join(", ") : ""}`);
+      let rings = "";
+      ACTS.forEach((a, i) => {
+        const r = 46 - i * 9; const circ = 2 * Math.PI * r; const f = Math.min(1, (Number(e[a.k]) || 0) / (T[a.k] / N));
+        rings += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--${a.k}-soft)" stroke-width="7"/>`;
+        if (f > 0) rings += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--${a.k})" stroke-width="7" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="${circ * f} ${circ}"/>`;
+      });
+      b.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${rings}</svg><span class="dn">${d}</span>`;
+      if (!b.disabled) b.addEventListener("click", () => openLog(k));
+      cal.append(b);
+    }
+  }
+
+  function renderMilestones() {
+    const a = ACTS.find((x) => x.k === S.sel) || ACTS[1]; const s = C.acts[a.k];
+    el("ms-title").textContent = `${a.name} · monthly milestones`;
+    const box = el("ms-chart"); box.querySelector("svg")?.remove();
+    const W = Math.max(280, box.clientWidth), H = 200, m = { t: 10, r: 6, b: 24, l: 40 };
+    const x = d3.scaleBand(s.ms.map((d) => d.mk), [m.l, W - m.r]).padding(.28);
+    const ymax = d3.max(s.ms, (d) => Math.max(d.goal, d.done)) * 1.12 || 1;
+    const y = d3.scaleLinear([0, ymax], [H - m.b, m.t]).nice();
+    const svg = d3.select(box).insert("svg", ":first-child").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", `${a.name} monthly goal versus done`);
+    const yt = y.ticks(4);
+    svg.append("g").selectAll("line").data(yt).join("line").attr("class", "grid-line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y);
+    const yf = (v) => (a.unit === "m" ? (v >= 1000 ? d3.format(",")(v / 1000) + "k" : v) : d3.format(",")(v));
+    svg.append("g").selectAll("text").data(yt).join("text").attr("class", "t").attr("x", m.l - 6).attr("y", (d) => y(d) + 4).attr("text-anchor", "end").text(yf);
+    svg.append("g").selectAll("text").data(s.ms).join("text").attr("class", "t").attr("x", (d) => x(d.mk) + x.bandwidth() / 2).attr("y", H - 6).attr("text-anchor", "middle")
+      .text((d) => monthName(d.mk, { month: W < 480 ? "narrow" : "short" }));
+    const bw = x.bandwidth();
+    // goal ghost
+    svg.append("g").selectAll("rect").data(s.ms).join("rect").attr("x", (d) => x(d.mk)).attr("width", bw)
+      .attr("y", (d) => y(d.goal)).attr("height", (d) => Math.max(0, y(0) - y(d.goal))).attr("rx", Math.min(6, bw / 2))
+      .attr("fill", `var(--${a.k}-soft)`).attr("stroke", (d) => (d.current ? `var(--${a.k})` : "none")).attr("stroke-dasharray", "3 3");
+    // done
+    svg.append("g").selectAll("rect").data(s.ms.filter((d) => d.started)).join("rect").attr("x", (d) => x(d.mk) + bw * .18).attr("width", bw * .64)
+      .attr("y", (d) => y(d.done)).attr("height", (d) => Math.max(0, y(0) - y(d.done))).attr("rx", Math.min(4, bw * .32))
+      .attr("fill", (d) => (d.done >= d.goal ? "var(--good)" : `var(--${a.k})`));
+    const tip = tipFor(box);
+    svg.append("g").selectAll("rect").data(s.ms).join("rect").attr("x", (d) => x(d.mk) - x.step() * x.paddingInner() / 2).attr("width", x.step()).attr("y", m.t).attr("height", H - m.t - m.b).attr("fill", "transparent")
+      .on("pointermove", (ev, d) => {
+        const html = `<div class="tt">${monthName(d.mk)}</div>` +
+          (d.started ? `<div class="tr"><span>Base goal</span><b>${fmt(a, d.base)}</b></div><div class="tr"><span>Carried in</span><b>${d.carry >= 0 ? "+" : "−"}${fmt(a, Math.abs(d.carry))}</b></div>` : "") +
+          `<div class="tr"><span>Goal</span><b>${fmt(a, d.goal)} ${a.unit}</b></div>` + (d.started ? `<div class="tr"><span>Done</span><b>${fmt(a, d.done)} ${a.unit}</b></div>` : "");
+        tip.show(html, x(d.mk) + bw / 2, d3.pointer(ev)[1]);
+      }).on("pointerleave", () => tip.hide());
+    el("ms-legend").innerHTML = `<span><i style="--c:var(--${a.k});border-top-width:8px;width:12px;border-radius:2px;opacity:.35"></i>Goal (incl. carry-over)</span><span><i style="--c:var(--${a.k});border-top-width:8px;width:12px;border-radius:2px"></i>Done</span><span><i style="--c:var(--good);border-top-width:8px;width:12px;border-radius:2px"></i>Milestone met</span>`;
+    const tb = el("ms-table");
+    const rows = s.ms.filter((d) => d.started || d === s.ms.find((x) => !x.started));
+    tb.innerHTML = `<thead><tr><th>Month</th><th>Carried in</th><th>Goal</th><th>Done</th><th>Left</th></tr></thead><tbody>` +
+      rows.map((d) => {
+        const left = Math.max(0, d.goal - d.done);
+        return `<tr class="${d.current ? "cur" : ""}"><td>${monthName(d.mk, { month: "short", year: "2-digit" })}</td><td>${d.carry == null ? "–" : (d.carry >= 0 ? "+" : "−") + fmt(a, Math.abs(d.carry))}</td><td>${fmt(a, d.goal)}</td><td>${d.started ? fmt(a, d.done) : "–"}</td><td class="${d.started && left === 0 ? "ok" : ""}">${!d.started ? "–" : left === 0 ? "✓" : fmt(a, left)}</td></tr>`;
+      }).join("") + `</tbody>`;
+  }
+
+  function renderWeekly() {
+    const a = ACTS.find((x) => x.k === S.sel) || ACTS[1]; const s = C.acts[a.k];
+    el("wk-title").textContent = `${a.name} · weekly volume`;
+    const box = el("wk-chart"); box.querySelector("svg")?.remove(); box.querySelector(".empty")?.remove();
+    const data = s.weeks.slice(-12);
+    const W = Math.max(280, box.clientWidth), H = 190, m = { t: 14, r: 8, b: 24, l: 40 };
+    const x = d3.scaleBand(data.map((d) => d.ws), [m.l, W - m.r]).padding(.3);
+    const ymax = Math.max(d3.max(data, (d) => d.v) || 0, s.neededWeek) * 1.15 || 1;
+    const y = d3.scaleLinear([0, ymax], [H - m.b, m.t]).nice();
+    const svg = d3.select(box).insert("svg", ":first-child").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", `${a.name} per week`);
+    const yt = y.ticks(4);
+    svg.append("g").selectAll("line").data(yt).join("line").attr("class", "grid-line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y);
+    const yf = (v) => (a.unit === "m" ? (v >= 1000 ? d3.format(",")(v / 1000) + "k" : v) : d3.format(",")(v));
+    svg.append("g").selectAll("text").data(yt).join("text").attr("class", "t").attr("x", m.l - 6).attr("y", (d) => y(d) + 4).attr("text-anchor", "end").text(yf);
+    const bw = Math.min(32, x.bandwidth());
+    svg.append("g").selectAll("text").data(data).join("text").attr("class", "t").attr("x", (d) => x(d.ws) + x.bandwidth() / 2).attr("y", H - 6).attr("text-anchor", "middle")
+      .text((d, i) => (data.length > 8 && i % 2 ? "" : fmtDay(d.ws, { day: "numeric", month: "short" })));
+    svg.append("g").selectAll("rect").data(data).join("rect").attr("x", (d) => x(d.ws) + (x.bandwidth() - bw) / 2).attr("width", bw)
+      .attr("y", (d) => y(d.v)).attr("height", (d) => Math.max(0, y(0) - y(d.v))).attr("rx", Math.min(6, bw / 2))
+      .attr("fill", (d) => (d.v >= s.neededWeek ? `var(--${a.k})` : `var(--${a.k})`)).attr("opacity", (d) => (d.v >= s.neededWeek ? 1 : .55));
+    svg.append("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y(s.neededWeek)).attr("y2", y(s.neededWeek)).attr("stroke", "var(--fg)").attr("stroke-width", 1.5).attr("stroke-dasharray", "5 4");
+    svg.append("text").attr("class", "t").attr("x", W - m.r).attr("y", y(s.neededWeek) - 6).attr("text-anchor", "end").attr("style", "fill:var(--fg);font-weight:600").text(`Need ${fmt(a, s.neededWeek)} ${a.unit}/wk`);
+    const tip = tipFor(box);
+    svg.append("g").selectAll("rect").data(data).join("rect").attr("x", (d) => x(d.ws) - x.step() * x.paddingInner() / 2).attr("width", x.step()).attr("y", m.t).attr("height", H - m.t - m.b).attr("fill", "transparent")
+      .on("pointermove", (ev, d) => tip.show(`<div class="tt">Week of ${fmtDay(d.ws, { day: "numeric", month: "short" })}</div><div class="tr"><span>${a.short}</span><b>${fmt(a, d.v)} ${a.unit}</b></div><div class="tr"><span>Needed now</span><b>${fmt(a, s.neededWeek)} ${a.unit}</b></div>`, x(d.ws) + x.bandwidth() / 2, d3.pointer(ev)[1]))
+      .on("pointerleave", () => tip.hide());
+  }
+
+  function renderRhythm() {
+    const wd = el("week-dots"); wd.replaceChildren();
+    const names = ["M", "T", "W", "T", "F", "S", "S"];
+    C.cons.week.forEach((d, j) => {
+      const e = document.createElement("div"); e.className = "wdot";
+      const dots = d.acts.map((k, i) => `<circle cx="${50 + (i - (d.acts.length - 1) / 2) * 22}" cy="50" r="9" fill="var(--${k})"/>`).join("");
+      e.innerHTML = `<div class="b ${d.on ? "on" : ""}" style="${d.future ? "opacity:.45" : ""}">${d.on ? `<svg viewBox="0 0 100 100" aria-hidden="true">${dots}</svg>` : ""}</div><span>${names[j]}</span>`;
+      e.setAttribute("aria-label", `${fmtDay(d.k)}: ${d.on ? d.acts.join(", ") : "rest"}`);
+      wd.append(e);
+    });
+    const box = el("dow-chart"); box.querySelector("svg")?.remove();
+    const W = Math.max(200, box.clientWidth), H = 90, m = { t: 14, r: 2, b: 18, l: 2 };
+    const x = d3.scaleBand(d3.range(7), [m.l, W - m.r]).padding(.25);
+    const ymax = Math.max(1, d3.max(C.cons.dow));
+    const y = d3.scaleLinear([0, ymax], [H - m.b, m.t]);
+    const svg = d3.select(box).insert("svg", ":first-child").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", "Active days by weekday");
+    const best = d3.max(C.cons.dow);
+    svg.append("g").selectAll("rect").data(C.cons.dow).join("rect").attr("x", (d, i) => x(i)).attr("width", x.bandwidth())
+      .attr("y", (d) => y(d)).attr("height", (d) => Math.max(2, y(0) - y(d))).attr("rx", 4)
+      .attr("fill", (d) => (d === best && d > 0 ? "var(--fg)" : "var(--faint)")).attr("opacity", (d) => (d === best && d > 0 ? 1 : .55));
+    svg.append("g").selectAll("text.v").data(C.cons.dow).join("text").attr("class", "t").attr("x", (d, i) => x(i) + x.bandwidth() / 2).attr("y", (d) => y(d) - 4).attr("text-anchor", "middle").text((d) => d);
+    svg.append("g").selectAll("text.l").data(names).join("text").attr("class", "t").attr("x", (d, i) => x(i) + x.bandwidth() / 2).attr("y", H - 4).attr("text-anchor", "middle").text((d) => d);
+    el("rh-active").innerHTML = `${C.cons.activeDays}<small> / ${Math.max(0, C.elapsed)}</small>`;
+    el("rh-best").innerHTML = `${C.cons.best}<small> days</small>`;
+    el("rh-weeks").innerHTML = C.cons.wkTot ? `${C.cons.wkHit}<small> / ${C.cons.wkTot}</small>` : `–<small> none finished</small>`;
+  }
+
+  // ---------- log sheet ----------
+  let logKey = null;
+  function openLog(k) {
+    const tk = todayKey();
+    logKey = k || (tk < START ? START : tk > END ? END : tk);
+    const inp = el("log-date"); inp.min = START; inp.max = tk < END ? tk : END; inp.value = logKey;
+    fillEntries(); el("log-err").hidden = true; el("log-scrim").hidden = false;
+    setTimeout(() => el("entries").querySelector("input")?.focus({ preventScroll: true }), 50);
+  }
+  function fillEntries() {
+    const e = realLog()[logKey] || {}; const box = el("entries"); box.replaceChildren();
+    el("log-h").textContent = logKey === todayKey() ? "Log today" : fmtDay(logKey);
+    el("d-next").disabled = logKey >= el("log-date").max; el("d-prev").disabled = logKey <= START;
+    ACTS.forEach((a) => {
+      const row = document.createElement("div"); row.className = "entry";
+      row.style.setProperty("--c", `var(--${a.k})`); row.style.setProperty("--soft", `var(--${a.k}-soft)`);
+      const v = Number(e[a.k]) || "";
+      row.innerHTML = `<div class="entry-top"><span class="ic">${svgIcon(a.icon)}</span><span class="nm">${a.name}<small>${a.unit === "m" ? "metres" : "kilometres"}</small></span>
+        <span class="in-unit"><input type="number" id="in-${a.k}" min="0" step="any" inputmode="decimal" placeholder="0" value="${v}" aria-label="${a.name} in ${a.unit}"><span>${a.unit}</span></span></div>
+        <div class="chips">${a.quick.map((q) => `<button type="button" data-q="${q}">+${q.toLocaleString("en-GB")} ${a.unit}</button>`).join("")}</div>`;
+      row.querySelectorAll("[data-q]").forEach((b) => b.addEventListener("click", () => {
+        const i = row.querySelector("input"); const cur = Number(i.value) || 0; const nv = cur + Number(b.dataset.q);
+        i.value = a.unit === "m" ? Math.round(nv) : +nv.toFixed(2);
+      }));
+      box.append(row);
+    });
+  }
+  el("log-date").addEventListener("change", (ev) => { const v = ev.target.value; if (v && ev.target.validity.valid && v >= START && v <= ev.target.max) { logKey = v; fillEntries(); } });
+  el("d-prev").addEventListener("click", () => { logKey = addDays(logKey, -1); el("log-date").value = logKey; fillEntries(); });
+  el("d-next").addEventListener("click", () => { logKey = addDays(logKey, 1); el("log-date").value = logKey; fillEntries(); });
+  el("log-save").addEventListener("click", async () => {
+    const entry = {}; let bad = false;
+    ACTS.forEach((a) => { const raw = el("in-" + a.k).value.trim(); if (!raw) return; const n = Number(raw); if (!isFinite(n) || n < 0) bad = true; else if (n > 0) entry[a.k] = a.unit === "m" ? Math.round(n) : +n.toFixed(2); });
+    if (bad) { showErr("log-err", "Distances must be 0 or more."); return; }
+    el("log-save").disabled = true;
+    try { await saveDay(logKey, entry); el("log-scrim").hidden = true; toast(Object.keys(entry).length ? `Saved ${fmtDay(logKey)}` : `Cleared ${fmtDay(logKey)}`); }
+    catch (e) { showErr("log-err", saveErrMsg(e)); }
+    finally { el("log-save").disabled = false; }
+  });
+
+  // ---------- settings sheet ----------
+  function openSettings() {
+    const T = targets(); const box = el("target-fields"); box.replaceChildren();
+    ACTS.forEach((a) => {
+      const f = document.createElement("div"); f.className = "field";
+      f.innerHTML = `<label for="t-${a.k}">${a.name} (${a.unit === "m" ? "metres" : "km"})</label><input type="number" id="t-${a.k}" min="1" step="any" inputmode="decimal" value="${T[a.k]}">`;
+      box.append(f);
+    });
+    el("t-week").value = weekGoal(); el("set-err").hidden = true; el("set-scrim").hidden = false;
+    const cfg = sheetCfg(); el("s-url").value = cfg ? cfg.url : ""; el("s-token").value = cfg ? cfg.token : ""; el("s-err").hidden = true;
+    el("s-off").disabled = !cfg;
+  }
+  el("s-on").addEventListener("click", async () => {
+    const url = el("s-url").value.trim(), token = el("s-token").value.trim();
+    if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url) || !token) { showErr("s-err", "Paste the full web app URL (it starts with https://script.google.com/) and your token."); return; }
+    el("s-on").disabled = true; el("s-err").hidden = true;
+    try {
+      const data = await sheetGet({ url, token });
+      try { localStorage.setItem("yim-sheet", JSON.stringify({ url, token })); } catch (e) {}
+      // push anything logged on this device that the sheet doesn't have yet
+      const local = realLog(); const remote = data.days || {};
+      Object.keys(local).forEach((k) => { if (!remote[k]) outboxAdd({ op: "day", date: k, entry: local[k] }); });
+      if (!data.settings && S.settings) outboxAdd({ op: "settings", settings: S.settings });
+      S.mode = "sheet"; applyRemote(data); flush();
+      el("set-scrim").hidden = true; toast("Connected to Google Sheet");
+    } catch (e) { showErr("s-err", e && e.message === "unauthorized" ? "The token doesn't match the one in your script." : "Couldn't reach the script. Check the URL and that it's deployed with access set to Anyone."); }
+    finally { el("s-on").disabled = false; }
+  });
+  el("s-off").addEventListener("click", () => {
+    try { localStorage.removeItem("yim-sheet"); } catch (e) {}
+    el("set-scrim").hidden = true; S.mode = "local"; saveLocal(); render(); toast("Disconnected. Data stays on this device.");
+  });
+  el("set-save").addEventListener("click", async () => {
+    const t = {}; let bad = false;
+    ACTS.forEach((a) => { const n = Number(el("t-" + a.k).value); if (!(n > 0)) bad = true; t[a.k] = n; });
+    const w = Math.round(Number(el("t-week").value));
+    if (bad || !(w >= 1 && w <= 7)) { showErr("set-err", "Targets must be above 0 and active days between 1 and 7."); return; }
+    el("set-save").disabled = true;
+    try { await saveSettings({ targets: t, weekGoal: w }); el("set-scrim").hidden = true; toast("Goals saved"); }
+    catch (e) { showErr("set-err", saveErrMsg(e)); }
+    finally { el("set-save").disabled = false; }
+  });
+  el("export").addEventListener("click", async () => {
+    const L = realLog(); const keys = Object.keys(L).sort();
+    if (!keys.length) { toast("Nothing logged yet"); return; }
+    const csv = ["date," + ACTS.map((a) => `${a.k}_${a.unit}`).join(",")].concat(keys.map((k) => k + "," + ACTS.map((a) => L[k][a.k] || 0).join(","))).join("\n");
+    const dl = window.claude && typeof window.claude.use === "function" ? await window.claude.use("downloads") : null;
+    if (dl) {
+      try { await dl.save({ filename: "year-in-motion.csv", data: csv }); } catch (e) { if (e && e.code !== "declined") el("export-note").textContent = "The file couldn't be saved here."; }
+      return;
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "year-in-motion.csv";
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  function showErr(id, msg) { const e = el(id); e.textContent = msg; e.hidden = false; }
+  function saveErrMsg(e) {
+    const c = e && e.code;
+    if (c === "invalid_argument") return "You can view this page but not save to it. Ask the owner for Contributor access.";
+    if (c === "quota_exceeded") return "Storage is full for this page.";
+    return "Couldn't save. Check your connection and try again.";
+  }
+  let toastT; function toast(m) { const t = el("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2200); }
+
+  document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => (el(b.dataset.close + "-scrim").hidden = true)));
+  ["log-scrim", "set-scrim"].forEach((id) => el(id).addEventListener("click", (ev) => { if (ev.target.id === id) el(id).hidden = true; }));
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { el("log-scrim").hidden = true; el("set-scrim").hidden = true; } });
+  el("fab").addEventListener("click", () => openLog());
+  el("open-settings").addEventListener("click", openSettings);
+  el("set-targets").addEventListener("click", openSettings);
+  el("hide-demo").addEventListener("click", () => { S.demoHidden = true; try { localStorage.setItem("yim-demo-hidden", "1"); } catch (e) {} render(); });
+  el("cal-prev").addEventListener("click", () => { const i = MONTHS.indexOf(S.calMonth); if (i > 0) { S.calMonth = MONTHS[i - 1]; renderCalendar(); } });
+  el("cal-next").addEventListener("click", () => { const i = MONTHS.indexOf(S.calMonth); if (i < 11) { S.calMonth = MONTHS[i + 1]; renderCalendar(); } });
+
+  // ---------- persistence ----------
+  // Three backends, picked at start:
+  //  sheet  - your Google Sheet through an Apps Script web app (URL + token saved on this device)
+  //  claude - the artifact store, when the page is opened inside Claude
+  //  local  - this browser only
+  // Every backend also keeps a copy in localStorage so the page opens instantly and works offline.
+  let pending = 0; const chains = {};
+  function queue(docId, fn) {
+    pending++; renderSync();
+    const p = (chains[docId] || Promise.resolve()).catch(() => {}).then(fn);
+    chains[docId] = p;
+    return p.finally(() => { pending--; renderSync(); });
+  }
+  function saveLocal() { try { localStorage.setItem("yim-local", JSON.stringify({ settings: S.settings, months: S.months })); } catch (e) {} }
+  function loadLocal() { try { const raw = localStorage.getItem("yim-local"); if (raw) { const o = JSON.parse(raw); S.settings = o.settings || null; S.months = o.months || {}; } } catch (e) {} }
+  function setDay(k, entry) {
+    const mk = k.slice(0, 7); const month = Object.assign({}, S.months[mk] || {});
+    if (entry && Object.keys(entry).length) month[k] = entry; else delete month[k];
+    S.months = Object.assign({}, S.months, { [mk]: month });
+    return month;
+  }
+
+  // --- Google Sheet backend ---
+  function sheetCfg() { try { const o = JSON.parse(localStorage.getItem("yim-sheet") || "null"); return o && o.url && o.token ? o : null; } catch (e) { return null; } }
+  async function sheetGet(cfg) {
+    const r = await fetch(cfg.url + (cfg.url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(cfg.token), { redirect: "follow" });
+    const j = await r.json(); if (j.error) throw new Error(j.error); return j;
+  }
+  async function sheetPost(cfg, body) {
+    const r = await fetch(cfg.url, { method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ token: cfg.token }, body)) });
+    const j = await r.json(); if (j.error) throw new Error(j.error); return j;
+  }
+  let outbox = []; try { outbox = JSON.parse(localStorage.getItem("yim-outbox") || "[]"); } catch (e) {}
+  const saveOutbox = () => { try { localStorage.setItem("yim-outbox", JSON.stringify(outbox)); } catch (e) {} };
+  function outboxAdd(op) {
+    outbox = outbox.filter((o) => !(o.op === op.op && (op.op === "settings" || o.date === op.date)));
+    outbox.push(op); saveOutbox();
+  }
+  let flushing = false, offline = false, retryT = null;
+  async function flush() {
+    const cfg = sheetCfg(); if (!cfg || flushing) return;
+    flushing = true; renderSync();
+    try {
+      while (outbox.length) {
+        await sheetPost(cfg, outbox[0]);
+        outbox.shift(); saveOutbox(); offline = false; renderSync();
+      }
+    } catch (e) {
+      offline = true;
+      if (e && e.message === "unauthorized") toast("Sheet token rejected. Check Goals → Sync.");
+      clearTimeout(retryT); retryT = setTimeout(flush, 30000);
+    } finally { flushing = false; renderSync(); }
+  }
+  function applyRemote(data) {
+    const months = {};
+    Object.entries(data.days || {}).forEach(([k, e]) => { const mk = k.slice(0, 7); (months[mk] = months[mk] || {})[k] = e; });
+    S.months = months; S.settings = data.settings || null;
+    outbox.forEach((o) => { if (o.op === "day") setDay(o.date, o.entry); else if (o.op === "settings") S.settings = o.settings; });
+    saveLocal(); render();
+  }
+  async function refresh() {
+    const cfg = sheetCfg(); if (!cfg || S.mode !== "sheet") return;
+    try { const d = await sheetGet(cfg); offline = false; applyRemote(d); flush(); }
+    catch (e) { offline = true; renderSync(); }
+  }
+
+  async function saveDay(k, entry) {
+    const prev = S.months[k.slice(0, 7)];
+    const month = setDay(k, entry); render();
+    if (S.mode === "sheet") { saveLocal(); outboxAdd({ op: "day", date: k, entry }); flush(); return; }
+    if (S.mode !== "claude") { saveLocal(); return; }
+    const mk = k.slice(0, 7);
+    try { await queue("m-" + mk, () => S.db.doc(`data/users/${S.uid}/m-${mk}`).set({ days: month })); }
+    catch (e) { S.months = Object.assign({}, S.months, { [mk]: prev || {} }); render(); throw e; }
+  }
+  async function saveSettings(st) {
+    const prev = S.settings; S.settings = st; render();
+    if (S.mode === "sheet") { saveLocal(); outboxAdd({ op: "settings", settings: st }); flush(); return; }
+    if (S.mode !== "claude") { saveLocal(); return; }
+    try { await queue("settings", () => S.db.doc(`data/users/${S.uid}/settings`).set(st)); }
+    catch (e) { S.settings = prev; render(); throw e; }
+  }
+  function goLocal() { S.mode = "local"; loadLocal(); render(); }
+
+  renderSync = function () {
+    const p = el("sync"); let cls = "", t = "Connecting";
+    if (S.mode === "sheet") {
+      if (offline) { cls = "warn"; t = outbox.length ? `Offline · ${outbox.length} to sync` : "Offline"; }
+      else if (outbox.length || flushing) { t = "Saving…"; } else { cls = "ok"; t = "Google Sheet"; }
+    } else if (S.mode === "claude") { cls = "ok"; t = pending > 0 ? "Saving…" : "Synced"; }
+    else if (S.mode === "local") { cls = "warn"; t = "This device only"; }
+    p.className = "pill " + cls; el("sync-t").textContent = t;
+  };
+
+  async function boot() {
+    render();
+    if (sheetCfg()) {
+      S.mode = "sheet"; loadLocal(); render(); refresh();
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+      window.addEventListener("online", () => { flush(); refresh(); });
+      setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
+      return;
+    }
+    const cl = window.claude;
+    if (!cl || typeof cl.use !== "function") { goLocal(); return; }
+    const [db, user] = await Promise.all([cl.use("db"), cl.use("user")]);
+    const uid = user ? await user.id() : null;
+    if (!db || !uid) { goLocal(); return; }
+    S.db = db; S.uid = uid;
+    db.collection(`data/users/${uid}`).onSnapshot((snap) => {
+      const months = {}; let settings = null;
+      snap.docs.forEach((d) => {
+        if (!d.exists) return; const b = d.data() || {};
+        if (d.id === "settings") settings = b;
+        else if (d.id.startsWith("m-") && b.days && typeof b.days === "object") months[d.id.slice(2)] = b.days;
+      });
+      S.months = months; S.settings = settings; S.mode = "claude"; render();
+    }, () => { goLocal(); });
+  }
+
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => C && render(), 120); });
+  boot();
+})();
+</script>
+</body>
+</html>
